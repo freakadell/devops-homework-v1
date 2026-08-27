@@ -1,0 +1,47 @@
+name: CD - Deploy to K8s
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push to Registry
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+    # Placeholder for Auto deploy. Uncomment the following steps to hold deploying to Kubernetes after building and pushing the Docker image. Reason being i do not have a integration between Github and my local Kubernetes cluster set up. Can do if needed
+    # - name: Set up Kubeconfig
+    #   uses: azure/k8s-set-context@v3
+    #   with:
+    #     method: kubeconfig
+    #     kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+    # - name: Update image tag and deploy
+    #   run: |
+    #     sed -i "s|image: ghcr.io/.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/deployment.yaml
+    #     kubectl apply -f k8s/configmap.yaml
+    #     kubectl apply -f k8s/deployment.yaml
+    #     kubectl apply -f k8s/service.yaml
+    #     kubectl apply -f k8s/ingress.yaml
