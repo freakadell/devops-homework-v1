@@ -1,6 +1,6 @@
 # DevOps kodutöö v1
 
-aigaldada lihtne konteineriseeritud rakendus Kubernetes pilveplatvormile koos korrektsete seadistuste ja automatiseeritud paigaldusvooga.
+Paigaldada lihtne konteineriseeritud rakendus Kubernetes pilveplatvormile koos korrektsete seadistuste ja automatiseeritud paigaldusvooga.
 
 Ülesanne simuleerib tüüpilist töövoogu: kood GitHubis → image konteinerregistris → paigaldus Kubernetese klastrisse.
 
@@ -53,9 +53,9 @@ Projektis on seadistatud automaatne töövoog, mis on jagatud kaheks etapiks:
 
 1. **CI (`ci.yml`):** Käivitub automaatselt iga kord, kui luuakse *Pull Request* `main` harusse. See teeb Docker image test-buildi, veendumaks, et koodis ja seadistustes pole vigu.
 
-2. **CD (`cd.yml`):** Käivitub, kui kood liidetakse (*merge*) `main` harusse. See ehitab valmis image, sildistab selle unikaalse Git SHA ja `latest` tagiga ning lükkab selle turvaliselt **GitHub Container Registry-sse (GHCR)**.
+2. **CD (`cd.yml`):** Käivitub, kui kood liidetakse (*merge*) `main` harusse. See ehitab valmis image, sildistab selle unikaalse Git SHA ja `latest` tagiga ning lükkab  **GitHub Container Registry-sse (GHCR)**.
 
-> **Märkus klastrisse laadimise kohta:** Automaatne klastrisse deployment (`kubectl apply`) on pipeline'is hetkel teadlikult **välja kommenteeritud**. Kuna koodi testin kohalikus  **K3s klastris**, mis ei asu avalikus pilves, puudub GitHub Actionsil klastrile otsene ligipääs. Tootmiskeskkonnas tuleks klastrisse paigaldada GitOps agent (nt ArgoCD) või ühendada klaster GitHubiga läbi turvalise VPN-tunneli (nt Tailscale).
+> **Märkus klastrisse laadimise kohta:** Automaatne klastrisse deployment (`kubectl apply`) on pipeline'is hetkel teadlikult **välja kommenteeritud**. Kuna koodi testin kohalikus  **K3s klastris**, mis ei asu avalikus pilves, puudub GitHub Actionsil klastrile otsene ligipääs. Tootmiskeskkonnas tuleks klastrisse paigaldada GitOps agent (nt ArgoCD) või ühendada klaster GitHubiga läbi VPN-tunneli.
 
 ---
 
@@ -66,3 +66,5 @@ Projektis on seadistatud automaatne töövoog, mis on jagatud kaheks etapiks:
 2. **GitOps mudel (ArgoCD / Flux):** Asendada CI/CD push-põhine loogika pull-põhise GitOps mudeliga. Klastris jooksev ArgoCD jälgiks muudatusi ning tõmbaks muudatused K3s klastrisse automaatselt.
 
 3. **Saladuste haldus:** ConfigMap-i asemel võtta tundlike andmete jaoks kasutusele *External Secrets Operator* näiteks HashiCorp Vault.
+
+4. **Piirata ligipääs võrgu tasemel:** Kasutada (*Network policies*) millega seadistada piirangud ja lubada ühendused ainult nende komponentide vahel millel selleks vajadus (nt Web-app pod ja Database pod).
