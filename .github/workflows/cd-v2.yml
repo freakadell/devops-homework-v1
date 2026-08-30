@@ -55,7 +55,7 @@ jobs:
 
     - name: Update image tag and deploy
       run: |
-        sed -i "s|image: ghcr.io/.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/deployment.yaml
+        sed -i "s|image: ghcr.io/.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/dev/deployment.yaml
         
         kubectl_cmd="kubectl --server=https://localhost:8443 --insecure-skip-tls-verify"
         
