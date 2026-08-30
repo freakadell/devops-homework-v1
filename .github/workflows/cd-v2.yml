@@ -31,22 +31,6 @@ jobs:
         push: true
         tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
 
-    - name: Install Cloudflared
-      run: |
-        sudo mkdir -p --mode=0755 /usr/share/keyrings
-        curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
-        echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-        sudo apt-get update && sudo apt-get install cloudflared -y
-
-    - name: Start Cloudflare Access Proxy
-      env:
-        CF_CLIENT_ID: ${{ secrets.CF_CLIENT_ID }}
-        CF_CLIENT_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
-      run: |
-        cloudflared access tcp --hostname homek8skjhkjh.riives.eu --url localhost:8443 \
-          --id "$CF_CLIENT_ID" --secret "$CF_CLIENT_SECRET" &
-        sleep 3 # Wait for the proxy to start
-
     - name: Set up Kubeconfig
       uses: azure/k8s-set-context@v3
       with:
@@ -54,12 +38,15 @@ jobs:
         kubeconfig: ${{ secrets.KUBE_CONFIG }}
 
     - name: Update image tag and deploy
+      env:
+        CF_ID: ${{ secrets.CF_CLIENT_ID }}
+        CF_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
       run: |
         sed -i "s|image: ghcr.io/.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/dev/deployment.yaml
         
-        kubectl_cmd="kubectl --server=https://localhost:8443 --insecure-skip-tls-verify"
+        alias_kube="kubectl --header='CF-Access-Client-Id: $CF_ID' --header='CF-Access-Client-Secret: $CF_SECRET'"
         
-        $kubectl_cmd apply -f k8s/dev/configmap.yaml
-        $kubectl_cmd apply -f k8s/dev/deployment.yaml
-        $kubectl_cmd apply -f k8s/dev/service.yaml
-        $kubectl_cmd apply -f k8s/dev/ingress.yaml
+        $alias_kube apply -f k8s/dev/configmap.yaml
+        $alias_kube apply -f k8s/dev/deployment.yaml
+        $alias_kube apply -f k8s/dev/service.yaml
+        $alias_kube apply -f k8s/dev/ingress.yaml
