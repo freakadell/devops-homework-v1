@@ -31,15 +31,17 @@ jobs:
         push: true
         tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
 
-    - name: Set up Kubeconfig
-      uses: azure/k8s-set-context@v3
-      with:
-        method: kubeconfig
-        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    - name: Set up Secure Kubeconfig
+      env:
+        CF_ID: ${{ secrets.CF_CLIENT_ID }}
+        CF_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
+        RAW_KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$RAW_KUBE_CONFIG" | envsubst > ~/.kube/config
+        chmod 600 ~/.kube/config
 
     - name: Update image tag and deploy
-      env:
-        KUBECTL_HEADERS: "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }},CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}"
       run: |
         sed -i "s|image: ghcr.io/.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" k8s/dev/deployment.yaml
         
